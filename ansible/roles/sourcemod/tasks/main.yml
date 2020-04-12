@@ -1,0 +1,14 @@
+---
+
+# https://www.sourcemm.net/downloads.php?branch=stable
+# https://www.sourcemod.net/downloads.php
+- name: Install SourceMod and Metamod
+  unarchive:
+    src: "{{ item }}"
+    dest: "{{ srcds_root_dir }}/tf2/tf/"
+    copy: no
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
+  with_items:
+    - https://mms.alliedmods.net/mmsdrop/1.11/mmsource-1.11.0-git1130-linux.tar.gz
+    - https://sm.alliedmods.net/smdrop/1.11/sourcemod-1.11.0-git6523-linux.tar.gz

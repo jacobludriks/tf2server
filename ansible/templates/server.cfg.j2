@@ -1,0 +1,29 @@
+// The server name that players will see in the server browser and in the scoreboard
+hostname "TF2 Olive Enthusiasts"
+
+// Leave empty if you do not want a password
+sv_password ""
+// Password to enable rcon access from the console
+rcon_password "{{ srcds_rcon_pwd }}"
+
+// Time per map in the rotation, in minutes. 0 to never rotate the map on a timer.
+mp_timelimit 30
+// Maximum number of rounds to play per map before forcing a mapchange
+mp_maxrounds 2
+
+// Allow clients to upload customization files (e.g. sprays)
+sv_allowupload 1
+// Allow clients to download files (e.g. sprays, custom maps, custom content, etc.)
+sv_allowdownload 1
+// Maximum allowed file size for uploading in MB (Optional)
+net_maxfilesize 15
+
+sv_alltalk 0
+sv_region 5
+sv_pure 1
+
+log on
+sv_logfile 1
+sv_logecho 1
+mp_logdetail 3
+sv_logbans 1

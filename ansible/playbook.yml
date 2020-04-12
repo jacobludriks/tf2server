@@ -1,0 +1,64 @@
+---
+- hosts: localhost
+  become: true
+  connection: local
+  gather_facts: no
+
+  vars:
+    srcds_root_dir: /usr/games/steam/
+    srcds_user: steam
+    http_root: "{{ srcds_root_dir }}/tf2/tf/custom/mapdl/"
+    srcds_rcon_pwd: "{{ lookup('env', 'RCON_PWD') }}"
+  
+  roles:
+    - role: srcds
+    - role: sourcemod
+      http_root: "{{ srcds_root_dir }}/tf2/tf/custom/mapdl/"
+  
+  tasks:
+    - name: Create custom map folder
+      file:
+        path: "{{ srcds_root_dir }}/tf2/tf/custom/mapdl/maps/"
+        state: directory
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+
+    - name: Install Server config
+      template:
+        src: templates/server.cfg.j2
+        dest: "{{ srcds_root_dir }}/tf2/tf/cfg/server.cfg"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+        mode: 0600
+
+    - name: Install Server MOTD
+      copy:
+        src: files/motd.txt
+        dest: "{{ srcds_root_dir }}/tf2/tf/cfg/motd.txt"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+        mode: 0600
+
+    - name: Install Server mapcycle
+      copy:
+        src: files/mapcycle.txt
+        dest: "{{ srcds_root_dir }}/tf2/tf/cfg/mapcycle.txt"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+        mode: 0600
+
+    - name: Install Sourcemod admins file
+      copy:
+        src: files/admins.cfg
+        dest: "{{ srcds_root_dir }}/tf2/tf/addons/sourcemod/configs/server.cfg"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+        mode: 0600
+
+    - name: Create symlink for tf2
+      file:
+        src: "{{ srcds_root_dir }}/tf2/tf/"
+        dest: "/tf2"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+        state: link

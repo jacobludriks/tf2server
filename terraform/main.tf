@@ -1,11 +1,21 @@
+# Run with: terraform.exe plan -var-file="C:\path\to\variables.tfvars"
+
+variable "subscription_id" {}
+variable "tenant_id" {}
+variable "client_id" {}
+variable "client_secret" {}
+variable "client_name" {}
+variable "publickey" {}
+
+
 provider "azurerm" {
     version     = "~>2.0"
     features {}
 
-    subscription_id     = ""
-    client_id           = ""
-    client_secret       = ""
-    tenant_id           = ""
+    subscription_id     = var.subscription_id
+    client_id           = var.client_id
+    client_secret       = var.client_secret
+    tenant_id           = var.tenant_id
 }
 
 resource "azurerm_resource_group" "tf2group" {
@@ -90,8 +100,8 @@ resource "azurerm_network_interface" "tf2nic" {
 }
 
 resource "azurerm_network_interface_security_group_association" "tf2nsga" {
-    network_interface_id                = azurerm.azurerm_network_interface.tf2nic.id
-    azurerm_network_security_group_id   = azurerm_network_security_group.tf2nsg.id
+    network_interface_id                = azurerm_network_interface.tf2nic.id
+    network_security_group_id           = azurerm_network_security_group.tf2nsg.id
 }
 
 resource "random_id" "randomId" {
@@ -114,7 +124,7 @@ resource "azurerm_linux_virtual_machine" "tf2vm" {
     name                  = "TF2Server"
     location              = "Australia East"
     resource_group_name   = azurerm_resource_group.tf2group.name
-    network_interface_ids = [azurerm.azurerm_network_interface.tf2nic.id]
+    network_interface_ids = [azurerm_network_interface.tf2nic.id]
     size                  = "Standard_B1ms"
 
     os_disk {
@@ -136,12 +146,7 @@ resource "azurerm_linux_virtual_machine" "tf2vm" {
         
     admin_ssh_key {
         username       = "binchicken"
-        public_key     = "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEArlfEusjNcmeytxajGwedYTIhvkoOxnA5lD0F
-IcpeAeXjvcQRGdSAy5SX1i5vXMa3jPbElXwmVWDgQ/Vdm5O19dRmv+E91LUynY5R
-tgTDKzvcRrTCb/9NhM89juDIRyGyetWLwyOmQEz04gcbaQZLhl427t/mSyohhUtd
-388a6sWeupmr8cEx3e7w00bGFqBZJuXn02rp9SoBMX7RCnDlPQlWJta6/Uylvjvs
-hHgUCeAy6sqMeMAzRILf5wwwS4QqM8hf1rtyk/9oWSnqv4PS/slYOZdWdCpRX4nZ
-wXHgjIimFrXKHzrZoFeKXtYcqPWm74YGfLBroSobFZPJ84WB/Q=="
+        public_key     = var.publickey
     }
 
     boot_diagnostics {

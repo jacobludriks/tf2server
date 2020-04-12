@@ -1,5 +1,5 @@
 ---
-- hosts: localhost
+- hosts: '{{ target }}'
   become: true
   connection: local
   gather_facts: no
@@ -50,7 +50,7 @@
     - name: Install Sourcemod admins file
       copy:
         src: files/admins.cfg
-        dest: "{{ srcds_root_dir }}/tf2/tf/addons/sourcemod/configs/server.cfg"
+        dest: "{{ srcds_root_dir }}/tf2/tf/addons/sourcemod/configs/admins.cfg"
         owner: "{{ srcds_user }}"
         group: "{{ srcds_user }}"
         mode: 0600

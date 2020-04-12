@@ -35,12 +35,13 @@
     - libstdc++6
     - libtinfo5:i386
     - libcurl3-gnutls:i386
+    - python-apt
+    - gdb
+    - libstdc++6:i386
 #    - lib32tinfo5
-#    - libstdc++6:i386
 #    - libcurl4-openssl-dev
 #    - libtcmalloc-minimal4:i386
 #    - sqlite3
-#    - gdb
 #    - util-linux
 #    - ca-certificates
 #    - binutils
@@ -60,18 +61,17 @@
     owner: "{{ srcds_user }}"
     group: "{{ srcds_user }}"
 
-- command: "chown -R steam:steam  {{ srcds_root_dir }}"
+- name: Take ownership of game directory
+  file:
+    path: "{{ srcds_root_dir }}"
+    recurse: yes
+    state: "directory"
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
 
 - name: Install TF2 dedicated server
   command: "{{srcds_root_dir}}/steamcmd.sh +login anonymous +force_install_dir {{ srcds_root_dir }}/tf2 +app_update 232250 +quit"
   become_user: "{{ srcds_user }}"
-
-- name: Copy TF2 server MOTD
-  copy:
-    src: files/server.cfg
-    dest: "{{ srcds_root_dir }}/tf2/tf/cfg/server.cfg"
-    owner: "{{ srcds_user }}"
-    group: "{{ srcds_user }}"
 
 - name: Copy TF2 systemd unit
   template:

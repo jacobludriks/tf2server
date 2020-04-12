@@ -1,11 +1,22 @@
 # Run with: terraform.exe plan -var-file="C:\path\to\variables.tfvars"
 
+# The values for these variables are stored in variables.tfvars, which is not stored in the repository
 variable "subscription_id" {}
 variable "tenant_id" {}
 variable "client_id" {}
 variable "client_secret" {}
 variable "client_name" {}
 variable "publickey" {}
+
+# The location that the VM will be deployed in
+variable "location" {
+    default = "Australia East"
+}
+
+# The site of the VM
+variable "vm_size" {
+    default = "Standard_B1ms"
+}
 
 
 provider "azurerm" {
@@ -20,13 +31,13 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "tf2group" {
     name        = "TF2Server"
-    location    = "Australia East"
+    location    = var.location
 }
 
 resource "azurerm_virtual_network" "tf2network" {
     name                    = "TF2"
     address_space           = ["10.90.0.0/16"]
-    location                = "Australia East"
+    location                = var.location
     resource_group_name     = azurerm_resource_group.tf2group.name
 }
 
@@ -39,27 +50,16 @@ resource "azurerm_subnet" "tf2subnet" {
 
 resource "azurerm_public_ip" "tf2publicip" {
     name                    = "TF2PublicIP"
-    location                = "Australia East"
+    location                = var.location
     resource_group_name     = azurerm_resource_group.tf2group.name
     allocation_method       = "Static"
 }
 
+# Allow port 27015 on TCP and UDP for TF2
 resource "azurerm_network_security_group" "tf2nsg" {
     name                    = "TF2NSG"
-    location                = "Australia East"
+    location                = var.location
     resource_group_name     = azurerm_resource_group.tf2group.name
-
-    security_rule {
-        name                        = "SSH"
-        priority                    = 100
-        direction                   = "Inbound"
-        access                      = "Allow"
-        protocol                    = "Tcp"
-        source_port_range           = "*"
-        destination_port_range      = "22"
-        source_address_prefix       = "*"
-        destination_address_prefix  = "*"
-    }
 
     security_rule {
         name                        = "TF2Tcp"
@@ -88,7 +88,7 @@ resource "azurerm_network_security_group" "tf2nsg" {
 
 resource "azurerm_network_interface" "tf2nic" {
     name                    = "TF2Nic"
-    location                = "Australia East"
+    location                = var.location
     resource_group_name     = azurerm_resource_group.tf2group.name
 
     ip_configuration {
@@ -115,17 +115,18 @@ resource "random_id" "randomId" {
 resource "azurerm_storage_account" "tf2bootdiag" {
     name                        = "diag${random_id.randomId.hex}"
     resource_group_name         = azurerm_resource_group.tf2group.name
-    location                    = "Australia East"
+    location                    = var.location
     account_tier                = "Standard"
     account_replication_type    = "LRS"
 }
 
+# Create VM using Ubuntu 18.04 LTS
 resource "azurerm_linux_virtual_machine" "tf2vm" {
     name                  = "TF2Server"
-    location              = "Australia East"
+    location              = var.location
     resource_group_name   = azurerm_resource_group.tf2group.name
     network_interface_ids = [azurerm_network_interface.tf2nic.id]
-    size                  = "Standard_B1ms"
+    size                  = var.vm_size
 
     os_disk {
         name              = "OSDisk"
@@ -136,16 +137,16 @@ resource "azurerm_linux_virtual_machine" "tf2vm" {
     source_image_reference {
         publisher = "Canonical"
         offer     = "UbuntuServer"
-        sku       = "18.04.0-LTS"
+        sku       = "18.04-LTS"
         version   = "latest"
     }
 
     computer_name  = "TF2Server"
-    admin_username = "binchicken"
+    admin_username = "tf2oeadmin"
     disable_password_authentication = true
         
     admin_ssh_key {
-        username       = "binchicken"
+        username       = "tf2oeadmin"
         public_key     = var.publickey
     }
 

@@ -1,4 +1,4 @@
-# Run with: terraform.exe plan -var-file="C:\path\to\variables.tfvars"
+# Run with: terraform plan -var-file="/mnt/c/path/to/variables.tfvars"
 
 # The values for these variables are stored in variables.tfvars, which is not stored in the repository
 variable "subscription_id" {}
@@ -7,17 +7,22 @@ variable "client_id" {}
 variable "client_secret" {}
 variable "client_name" {}
 variable "publickey" {}
+variable "my_public_ip" {}
 
 # The location that the VM will be deployed in
 variable "location" {
     default = "Australia East"
 }
 
-# The site of the VM
+# The size of the VM
 variable "vm_size" {
     default = "Standard_B1ms"
 }
 
+# Username of admin on VM
+variable "vm_admin" {
+    default = "tf2oeadmin"
+}
 
 provider "azurerm" {
     version     = "~>2.0"
@@ -61,6 +66,17 @@ resource "azurerm_network_security_group" "tf2nsg" {
     location                = var.location
     resource_group_name     = azurerm_resource_group.tf2group.name
 
+    security_rule {
+        name                        = "SSH"
+        priority                    = 100
+        direction                   = "Inbound"
+        access                      = "Allow"
+        protocol                    = "Tcp"
+        source_port_range           = "*"
+        destination_port_range      = "22"
+        source_address_prefix       = "${var.my_public_ip}/32"
+        destination_address_prefix  = "*"
+    }
     security_rule {
         name                        = "TF2Tcp"
         priority                    = 500
@@ -146,11 +162,20 @@ resource "azurerm_linux_virtual_machine" "tf2vm" {
     disable_password_authentication = true
         
     admin_ssh_key {
-        username       = "tf2oeadmin"
+        username       = var.vm_admin
         public_key     = var.publickey
     }
 
     boot_diagnostics {
         storage_account_uri = azurerm_storage_account.tf2bootdiag.primary_blob_endpoint
     }
+
+    #provisioner "local-exec" {
+    #    command = "sleep 120; ansible-playbook -i '${azurerm_public_ip.tf2publicip.ip_address}' -u '${var.vm_admin}' ../ansible/playbook.yml"
+    #}
+}
+
+# Output IP address for DNS
+output "public_ip_address" {
+    value = azurerm_public_ip.tf2publicip.ip_address
 }

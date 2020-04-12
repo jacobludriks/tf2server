@@ -62,3 +62,8 @@
         owner: "{{ srcds_user }}"
         group: "{{ srcds_user }}"
         state: link
+
+    - name: Start TF2 service
+      systemd:
+        state: started
+        name: tf2

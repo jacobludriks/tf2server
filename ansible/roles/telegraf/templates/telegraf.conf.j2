@@ -2,12 +2,21 @@
   service_address = "udp://localhost:2500"
 
   data_format = "grok"
-  grok_custom_patterns = '''
-    %{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" entered the game
-    %{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" joined team "%{WORD:teamjoined}"
-    %{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" connected, address "%{IPV4:ipaddress}:%{POSINT:port}"
-    %{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" disconnected \(reason "%{DATA:disconnectreason}"\)
-    %{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" say "%{DATA:text}"
-  '''
+  grok_patterns = [
+      '%{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" entered the game',
+      '%{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" joined team "%{WORD:teamjoined}"',
+      '%{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" connected, address "%{IPV4:ipaddress}:%{POSINT:port}"',
+      '%{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" disconnected \(reason "%{DATA:disconnectreason}"\)',
+      '%{DATE:date} - %{TIME:time}: "%{DATA:name}<%{NUMBER:number}><%{DATA:steamid}><%{DATA:team}>" say "%{DATA:text}"'
+  ]
+
+[[outputs.file]]
+  files = ["stdout"]
 
 [[outputs.azure_monitor]]
+  namespace_prefix = "TF2/"
+
+
+#Used for testing
+#echo 'L 15/04/2020 - 08:55:15: "bin chicken<15><USTEAM><>" entered the game' | nc -u 127.0.0.1 2500
+#echo 'L 15/04/2020 - 08:55:15: "bin chicken<15><USTEAM><>" connected, address "10.1.1.1:27000"' | nc -u 127.0.0.1 2500

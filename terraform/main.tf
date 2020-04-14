@@ -170,6 +170,11 @@ resource "azurerm_linux_virtual_machine" "tf2vm" {
         storage_account_uri = azurerm_storage_account.tf2bootdiag.primary_blob_endpoint
     }
 
+    # A managed service identity is required for Azure Metrics
+    identity {
+        type    = "SystemAssigned"
+    }
+
     #provisioner "local-exec" {
     #    command = "sleep 120; ansible-playbook -i '${azurerm_public_ip.tf2publicip.ip_address}' -u '${var.vm_admin}' ../ansible/playbook.yml"
     #}

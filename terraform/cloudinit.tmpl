@@ -1,0 +1,13 @@
+#cloud-config
+timezone: "Australia/Sydney"
+apt:
+  preserve_sources_list: true
+  sources:
+    ansible:
+      source: "ppa:ansible/ansible"
+packages:
+  - software-properties-common
+  - ansible
+runcmd:
+  - echo '[local]\n127.0.0.1 ansible_connection=local' > /etc/ansible/hosts
+  - ansible-pull -U https://github.com/jacobludriks/tf2server ansible/playbook.yml

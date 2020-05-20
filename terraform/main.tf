@@ -1,29 +1,3 @@
-# Run with: terraform plan -var-file="/mnt/c/path/to/variables.tfvars"
-
-# The values for these variables are stored in variables.tfvars, which is not stored in the repository
-variable "subscription_id" {}
-variable "tenant_id" {}
-variable "client_id" {}
-variable "client_secret" {}
-variable "client_name" {}
-variable "publickey" {}
-variable "my_public_ip" {}
-
-# The location that the VM will be deployed in
-variable "location" {
-    default = "Australia East"
-}
-
-# The size of the VM
-variable "vm_size" {
-    default = "Standard_B1ms"
-}
-
-# Username of admin on VM
-variable "vm_admin" {
-    default = "tf2oeadmin"
-}
-
 provider "azurerm" {
     version     = "~>2.0"
     features {}
@@ -50,7 +24,7 @@ resource "azurerm_subnet" "tf2subnet" {
     name                    = "TF2Subnet"
     resource_group_name     = azurerm_resource_group.tf2group.name
     virtual_network_name    = azurerm_virtual_network.tf2network.name
-    address_prefix          = "10.90.1.0/24"
+    address_prefixes          = ["10.90.1.0/24"]
 }
 
 resource "azurerm_public_ip" "tf2publicip" {
@@ -136,6 +110,16 @@ resource "azurerm_storage_account" "tf2bootdiag" {
     account_replication_type    = "LRS"
 }
 
+# Get cloud-init config
+data "cloudinit_config" "tf2cloudinit" {
+    gzip = false
+    base64_encode = true
+    part {
+        content_type = "text/cloud-config"
+        content = templatefile("${path.module}/cloudinit.tmpl", {})
+    }
+}
+
 # Create VM using Ubuntu 18.04 LTS
 resource "azurerm_linux_virtual_machine" "tf2vm" {
     name                  = "TF2Server"
@@ -160,6 +144,9 @@ resource "azurerm_linux_virtual_machine" "tf2vm" {
     computer_name  = "TF2Server"
     admin_username = "tf2oeadmin"
     disable_password_authentication = true
+
+    # cloud-init to bootstrap ansible
+    custom_data = data.cloudinit_config.tf2cloudinit.rendered
         
     admin_ssh_key {
         username       = var.vm_admin
@@ -171,14 +158,23 @@ resource "azurerm_linux_virtual_machine" "tf2vm" {
     }
 
     # A managed service identity is required for Azure Metrics
-    identity {
-        type    = "SystemAssigned"
-    }
+    #identity {
+    #    type    = "SystemAssigned"
+    #}
 
     #provisioner "local-exec" {
     #    command = "sleep 120; ansible-playbook -i '${azurerm_public_ip.tf2publicip.ip_address}' -u '${var.vm_admin}' ../ansible/playbook.yml"
     #}
 }
+
+# Log analytics workspace for Telegraf logging
+#resource "azurerm_log_analytics_workspace" "tf2logs" {
+#    name                    = "tf2logs${random_id.randomId.hex}"
+#    location                = var.location
+#    resource_group_name     = azurerm_resource_group.tf2group.name
+#    sku                     = "PerGB2018"
+#    retention_in_days       = 30
+#}
 
 # Output IP address for DNS
 output "public_ip_address" {

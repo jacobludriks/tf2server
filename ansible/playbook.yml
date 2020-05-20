@@ -1,6 +1,5 @@
 ---
-- hosts: '{{ target }}'
-  become: true
+- hosts: all
   connection: local
   gather_facts: no
 

@@ -38,20 +38,6 @@
     - python-apt
     - gdb
     - libstdc++6:i386
-#    - lib32tinfo5
-#    - libcurl4-openssl-dev
-#    - libtcmalloc-minimal4:i386
-#    - sqlite3
-#    - util-linux
-#    - ca-certificates
-#    - binutils
-#    - bc
-
-# not sure why but this must be put on a second step, else it fails to install and silently errors
-#- name: Install steamcmd prereq's
-#  apt:
-#    name: "libcurl4-gnutls-dev:i386"
-#    state: latest
 
 - name: Download steamcmd from Valve
   unarchive:

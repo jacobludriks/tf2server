@@ -156,25 +156,7 @@ resource "azurerm_linux_virtual_machine" "tf2vm" {
     boot_diagnostics {
         storage_account_uri = azurerm_storage_account.tf2bootdiag.primary_blob_endpoint
     }
-
-    # A managed service identity is required for Azure Metrics
-    #identity {
-    #    type    = "SystemAssigned"
-    #}
-
-    #provisioner "local-exec" {
-    #    command = "sleep 120; ansible-playbook -i '${azurerm_public_ip.tf2publicip.ip_address}' -u '${var.vm_admin}' ../ansible/playbook.yml"
-    #}
 }
-
-# Log analytics workspace for Telegraf logging
-#resource "azurerm_log_analytics_workspace" "tf2logs" {
-#    name                    = "tf2logs${random_id.randomId.hex}"
-#    location                = var.location
-#    resource_group_name     = azurerm_resource_group.tf2group.name
-#    sku                     = "PerGB2018"
-#    retention_in_days       = 30
-#}
 
 # Output IP address for DNS
 output "public_ip_address" {

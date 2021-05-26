@@ -4,7 +4,10 @@
     "parameters": {
         "vnet_name": {
             "defaultValue": "TF2-VNET",
-            "type": "String"
+            "type": "String",
+            "metadata": {
+                "description":  "The name for the virtual network"
+            }
         },
         "subnet_name": {
             "defaultValue": "Subnet",
@@ -43,8 +46,8 @@
     "variables": {
         "location": "[resourceGroup().location]",
         "customData": "[concat('#include https://raw.githubusercontent.com/jacobludriks/tf2server/master/cloud-config.txt')]",
-        "storageAccount": "[concat('tf2diag',uniqueString(subscription().subscriptionId))]",
-        "keyVault": "[concat('tf2kv',uniqueString(subscription().subscriptionId))]"
+        "storageAccount": "[concat('tf2diag',uniqueString(resourceGroup().id))]",
+        "keyVault": "[concat('tf2kv',uniqueString(resourceGroup().id))]"
     },
     "resources": [
         {
@@ -228,7 +231,7 @@
                             "fileUris": [
                                 "https://raw.githubusercontent.com/jacobludriks/tf2server/master/rcon_env.sh"
                             ],
-                            "commandToExecute": "[concat('source rcon_env.sh -v', variables('keyVault'))]"
+                            "commandToExecute": "[concat('. ./rcon_env.sh -v', variables('keyVault'))]"
                         },
                         "protectedSettings": {
                         }
@@ -311,7 +314,7 @@
             "name": "[guid(resourceGroup().id)]",
             "properties": {
                 "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '4633458b-17de-408a-b874-0445c86b69e6')]",
-                "principalId": "[reference(resourceId('Microsoft.Compute/virtualMachines', parameters('vm_name')), '2020-12-01').principalId]",
+                "principalId": "[reference(resourceId('Microsoft.Compute/virtualMachines', parameters('vm_name')), '2020-12-01', 'Full').identity.principalId]",
                 "principalType": "ServicePrincipal"
             },
             "dependsOn": [

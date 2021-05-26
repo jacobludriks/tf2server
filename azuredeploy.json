@@ -206,7 +206,35 @@
             },
             "identity": {
                 "type": "SystemAssigned"
-            }
+            },
+            "resources": [
+                {
+                    "name": "config-app",
+                    "type": "extensions",
+                    "location": "[variables('location')]",
+                    "apiVersion": "2019-03-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vm_name'))]"
+                    ],
+                    "tags": {
+                        "displayName": "config-app"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.1",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "https://raw.githubusercontent.com/jacobludriks/tf2server/master/rcon_env.sh"
+                            ],
+                            "commandToExecute": "[concat('source rcon_env.sh -v', variables('keyVault'))]"
+                        },
+                        "protectedSettings": {
+                        }
+                    }
+                }
+            ]
         },
         {
             "name": "[parameters('nic_name')]",

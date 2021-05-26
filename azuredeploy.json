@@ -27,7 +27,7 @@
             "type": "String"
         },
         "location": {
-            "defaultValue": "australiaeast",
+            "defaultValue": "[resourceGroup().location]",
             "type": "String"
         },
         "vm_size": {
@@ -42,7 +42,8 @@
         }
     },
     "variables": {
-        "customData": "[concat('#include https://raw.github.com/jacobludriks/tf2server/cloud-config.txt')]"
+        "customData": "[concat('#include https://raw.github.com/jacobludriks/tf2server/cloud-config.txt')]",
+        "storageAccount": "[concat('tf2diag',uniqueString(subscription().subscriptionId))]"
     },
     "resources": [
         {
@@ -147,7 +148,8 @@
             "apiVersion": "2020-12-01",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/networkInterfaces', parameters('nic_name'))]"
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('nic_name'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccount'))]"
             ],
             "properties": {
                 "hardwareProfile": {
@@ -161,12 +163,11 @@
                         "version": "latest"
                     },
                     "osDisk": {
-                        "osType": "Linux",
-                        "name": "OSDisk",
-                        "createOption": "FromImage",
-                        "caching": "ReadWrite"
-                    },
-                    "dataDisks": []
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        }
+                    }
                 },
                 "osProfile": {
                     "computerName": "[parameters('vm_name')]",
@@ -195,7 +196,12 @@
                         }
                     ]
                 },
-                "priority": "Regular"
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[concat('https://', variables('storageAccount'), '.blob.core.windows.net/')]"
+                    }
+                }
             }
         },
         {
@@ -211,10 +217,9 @@
             "properties": {
                 "ipConfigurations": [
                     {
-                        "name": "[concat(parameters('nic_name'), 'Configuration')]",
+                        "name": "ipconfig1",
                         "properties": {
-                            "privateIPAddress": "10.90.1.4",
-                            "privateIPAllocationMethod": "Static",
+                            "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicip_name'))]"
                             },
@@ -230,6 +235,17 @@
                     "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_name'))]"
                 }
             }
+        },
+        {
+            "name": "[variables('storageAccount')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2021-02-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2"
         }
     ]
 }

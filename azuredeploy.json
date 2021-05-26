@@ -1,0 +1,235 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vnet_name": {
+            "defaultValue": "TF2-VNET",
+            "type": "String"
+        },
+        "subnet_name": {
+            "defaultValue": "Subnet",
+            "type": "String"
+        },
+        "nic_name": {
+            "defaultValue": "TF2Nic",
+            "type": "String"
+        },
+        "vm_name": {
+            "defaultValue": "TF2Server",
+            "type": "String"
+        },
+        "nsg_name": {
+            "defaultValue": "TF2NSG",
+            "type": "String"
+        },
+        "publicip_name": {
+            "defaultValue": "TF2PublicIP",
+            "type": "String"
+        },
+        "location": {
+            "defaultValue": "australiaeast",
+            "type": "String"
+        },
+        "vm_size": {
+            "defaultValue": "Standard_B1ms",
+            "type": "string"
+        },
+        "ssh_key": {
+            "type": "string"
+        },
+        "ssh_ip": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "customData": "[concat('#include https://raw.github.com/jacobludriks/tf2server/cloud-config.txt')]"
+    },
+    "resources": [
+        {
+            "name": "[parameters('vnet_name')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-07-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.90.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnet_name')]",
+                        "properties": {
+                            "addressPrefix": "10.90.1.0/24"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('nsg_name')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-07-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "SSH",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "[parameters('ssh_ip')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "TF2Udp",
+                        "properties": {
+                            "protocol": "Udp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "27015",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 510,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "TF2Tcp",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "27015",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 500,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('publicip_name')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-07-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "name": "[parameters('vm_name')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2020-12-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('nic_name'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vm_size')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "18.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "OSDisk",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite"
+                    },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vm_name')]",
+                    "adminUsername": "tf2oeadmin",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "/home/tf2oeadmin/.ssh/authorized_keys",
+                                    "keyData": "[parameters('ssh_key')]"
+                                }
+                            ]
+                        },
+                        "provisionVMAgent": true
+                    },
+                    "customData": "[base64(variables('customData'))]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nic_name'))]",
+                            "properties": {
+                                "primary": true
+                            }
+                        }
+                    ]
+                },
+                "priority": "Regular"
+            }
+        },
+        {
+            "name": "[parameters('nic_name')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-07-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicip_name'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet_name'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_name'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "[concat(parameters('nic_name'), 'Configuration')]",
+                        "properties": {
+                            "privateIPAddress": "10.90.1.4",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicip_name'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet_name'), parameters('subnet_name'))]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_name'))]"
+                }
+            }
+        }
+    ]
+}
